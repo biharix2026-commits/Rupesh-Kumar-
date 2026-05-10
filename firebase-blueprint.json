@@ -1,0 +1,55 @@
+{
+  "entities": {
+    "creation": {
+      "title": "Portfolio Creation",
+      "description": "A design project piece like a thumbnail, logo, or poster.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "The title of the creation" },
+        "category": { "type": "string", "description": "Category: YouTube, Logo, Poster, etc." },
+        "imageUrl": { "type": "string", "description": "URL of the image" },
+        "tier": { "type": "string", "enum": ["free", "premium"], "description": "Access tier" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of creation" },
+        "authorId": { "type": "string", "description": "The UID of the user who uploaded it" }
+      },
+      "required": ["title", "category", "imageUrl", "tier", "createdAt", "authorId"]
+    },
+    "message": {
+      "title": "Contact Message",
+      "description": "Information sent via the contact form.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Sender's name" },
+        "email": { "type": "string", "description": "Sender's email" },
+        "text": { "type": "string", "description": "The message content" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of submission" }
+      },
+      "required": ["name", "email", "text", "createdAt"]
+    },
+    "post": {
+      "title": "Text Post",
+      "description": "Text announcements or guides for customers.",
+      "type": "object",
+      "properties": {
+        "text": { "type": "string", "description": "Post content" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of creation" },
+        "authorId": { "type": "string", "description": "The UID of the admin" }
+      },
+      "required": ["text", "createdAt", "authorId"]
+    }
+  },
+  "firestore": {
+    "creations": {
+      "schema": "creation",
+      "description": "Collection of all design portfolio items."
+    },
+    "messages": {
+      "schema": "message",
+      "description": "Collection of all contact form submissions."
+    },
+    "posts": {
+      "schema": "post",
+      "description": "Collection for text announcements."
+    }
+  }
+}

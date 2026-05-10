@@ -1,0 +1,94 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isEmailVerified() && request.auth.token.email == 'biharix2026@gmail.com';
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Creation Validation
+    function isValidCreation(data) {
+      return data.keys().hasAll(['title', 'category', 'imageUrl', 'tier', 'createdAt', 'authorId']) &&
+             data.keys().size() == 6 &&
+             data.title is string && data.title.size() <= 100 &&
+             data.category is string && data.category.size() <= 50 &&
+             data.imageUrl is string && data.imageUrl.size() <= 1000000 &&
+             data.tier is string && (data.tier == 'free' || data.tier == 'premium') &&
+             data.authorId == request.auth.uid &&
+             data.createdAt == request.time;
+    }
+
+    // Message Validation
+    function isValidMessage(data) {
+      return data.keys().hasAll(['name', 'email', 'text', 'createdAt']) &&
+             data.keys().size() == 4 &&
+             data.name is string && data.name.size() <= 100 &&
+             data.email is string && data.email.size() <= 100 &&
+             data.text is string && data.text.size() <= 2000 &&
+             data.createdAt == request.time;
+    }
+
+    // Post Validation
+    function isValidPost(data) {
+      return data.keys().hasAll(['text', 'createdAt', 'authorId']) &&
+             data.keys().size() == 3 &&
+             data.text is string && data.text.size() <= 10000 &&
+             data.authorId == request.auth.uid &&
+             data.createdAt == request.time;
+    }
+
+    match /creations/{creationId} {
+      allow list: if true;
+      allow get: if true;
+      
+      allow create: if isAdmin() && isValidCreation(incoming()) && isValidId(creationId);
+      
+      allow update: if isAdmin() && isValidCreation(incoming()) && 
+                    incoming().diff(existing()).affectedKeys().hasOnly(['title', 'category', 'imageUrl', 'tier']) &&
+                    incoming().authorId == existing().authorId &&
+                    incoming().createdAt == existing().createdAt;
+                    
+      allow delete: if isAdmin();
+    }
+
+    match /messages/{messageId} {
+      allow create: if isValidMessage(incoming()) && isValidId(messageId);
+      allow get, list, delete: if isAdmin();
+    }
+
+    match /posts/{postId} {
+      allow list, get: if true;
+      allow create: if isAdmin() && isValidPost(incoming()) && isValidId(postId);
+      allow update: if isAdmin() && isValidPost(incoming()) && 
+                    incoming().diff(existing()).affectedKeys().hasOnly(['text']) &&
+                    incoming().authorId == existing().authorId &&
+                    incoming().createdAt == existing().createdAt;
+      allow delete: if isAdmin();
+    }
+  }
+}
